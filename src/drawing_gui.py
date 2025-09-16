@@ -33,14 +33,14 @@ BTN_STYLE = {
 
 SMALL_BTN_STYLE = BTN_STYLE.copy()
 SMALL_BTN_STYLE.update({
-    "font": (FONT_NAME, 8),   # smaller font
-    "width": 2,               # small fixed width
-    "height": 1,              # small fixed height
-    "padx": 0,                # tighter padding
+    "font": (FONT_NAME, 8),
+    "width": 2,
+    "height": 1,
+    "padx": 0, 
     "pady": 0,
-    "borderwidth": 1,         # thin border
-    "relief": "flat",         # flat look (no heavy outline)
-    "highlightthickness": 0   # remove focus highlight border
+    "borderwidth": 1,
+    "relief": "flat",
+    "highlightthickness": 0
 })
 
 
@@ -89,11 +89,9 @@ def interpolate(start: tuple[int, int],
     """
     Return a list of coordinates between the point <start> and point <end>.
     """
-    # Use Bresenham's line algorithm for better performance
     x1, y1 = start
     x2, y2 = end
     
-    # If points are the same, return just the endpoints
     if x1 == x2 and y1 == y2:
         return [start, end]
     
@@ -265,7 +263,7 @@ class DrawingGUI:
         self._color_tk_canvas.pack(pady=(0, 10))
         self._color_tk_canvas.create_rectangle(0, 0, 20, 20, fill=self.colour, outline='black')
 
-        # Current tool display
+        # current tool displays
         self._current_tool_label = tk.Label(self._toolbar_frame, text="Current Tool: Brush",
                                             font=FONT, bg="white")
         self._current_tool_label.pack(pady=(0,10))
@@ -281,8 +279,6 @@ class DrawingGUI:
         tk.Button(self._toolbar_frame, text="Downscale", command=self._coarsen, **BTN_STYLE).pack(pady=5, fill="x")
         tk.Button(self._toolbar_frame, text="Add Layer", command=self.add_layer, **BTN_STYLE).pack(pady=5, fill="x")
 
-        #3self._layers_frame = tk.Frame(self._root, bg="white")
-        # self._layers_frame.grid(row=2, column=0, columnspan=2, sticky="ew", pady=10)
         
         self._layers_panel_container = tk.Frame(
             self._root,
@@ -331,7 +327,7 @@ class DrawingGUI:
         self._root.bind('<Control-z>', lambda e: self._undo())
         self._root.bind('<Control-y>', lambda e: self._redo())
 
-        # VIEW CANVAS (smaller, top-right)
+        # VIEW CANVAS (smaller
         preview_size = canvas_size // 4
         self._view_canvas = tk.Canvas(self._root, width=preview_size, height=preview_size,
                                     bg="#111111", highlightthickness=4, highlightbackground="black")
@@ -341,7 +337,7 @@ class DrawingGUI:
         self._view_canvas.grid(row=0, column=1, padx=5, pady=5, sticky="ne")
 
         # EDIT CANVAS (main canvas, below preview)
-        # Create a frame to hold the edit canvas and scrollbars
+        # create a frame to hold the edit canvas and scrollbars...
         self._edit_canvas_frame = tk.Frame(self._root)
         self._edit_canvas_frame.grid(row=1, column=1, padx=5, pady=5, sticky="nsew")
         self._edit_canvas_frame.rowconfigure(0, weight=1)
@@ -389,7 +385,6 @@ class DrawingGUI:
         """Set the current tool label to the given <tool_name>."""
         if not isinstance(tool_name, str):
             raise ValueError("Tool name must be a string.")
-        # Update the label to reflect the current tool
         self._current_tool_label.config(text=f"Current Tool: {tool_name}")
     
     def _select_tool(self, tool_name: str) -> None:
@@ -407,7 +402,6 @@ class DrawingGUI:
         if self.colour is not None:
             self.colour = None
 
-            # Draw a box representing our 'transparent' colour
             c1 = '#aaaaaa'
             c2 = '#666666'
             self._color_tk_canvas.delete(tk.ALL)
@@ -433,8 +427,7 @@ class DrawingGUI:
                 if len(self.recent_colours) > self.max_recent_colours:
                     self.recent_colours.pop()
                 self._update_recent_colours_palette()
-    
-            # Update the display
+
             self._color_tk_canvas.delete(tk.ALL)
             self._color_tk_canvas.create_rectangle(0, 0, 20, 20,
                                                    fill=self.colour,
@@ -446,7 +439,6 @@ class DrawingGUI:
         for widget in self._recent_colours_squares.winfo_children():
             widget.destroy()
 
-        # Add each recent colour as a square
         for colour in self.recent_colours:
             btn = tk.Button(self._recent_colours_squares, bg=colour, width=2, height=1,
                             command=lambda c=colour: self._set_colour_from_palette(c))
@@ -501,36 +493,29 @@ class DrawingGUI:
         """Handle the drag event <event>, setting all pixels dragged across
          to self.colour.
         """
-        # Get the canvas coordinates (accounting for scrolling)
         canvas_x = int(self._edit_canvas.canvasx(event.x))
         canvas_y = int(self._edit_canvas.canvasy(event.y))
-        
-        # Check bounds
+
         if not (0 <= canvas_x < self.viewport_size and 0 <= canvas_y < self.viewport_size):
             self.last_updated_position = None
             return
-        
-        # Calculate pixel coordinates
+
         square_size = self.viewport_size / self.canvas_size
         i = int(canvas_x // square_size)
         j = int(canvas_y // square_size)
-        
-        # If this is a new drag, push to undo stack
+       
         if self.last_updated_position is None:
             self._push_undo()
-        
-        # Get current position
+
         current_position = (i, j)
-        
-        # If we have a previous position, interpolate
+   
         if self.last_updated_position is not None and self.last_updated_position != current_position:
             positions_to_draw = interpolate(self.last_updated_position, current_position)
         else:
             positions_to_draw = [current_position]
         
         self.last_updated_position = current_position
-        
-        # Process all positions to draw
+
         for pos in positions_to_draw:
             i, j = pos
             
@@ -540,17 +525,14 @@ class DrawingGUI:
             else:
                 self._canvas.get_active_layer().get_pixel((i, j)).set(self.colour)
             
-            # Update the GUI for this pixel
             x1 = int(i * square_size)
             y1 = int(j * square_size)
             x2 = int((i + 1) * square_size)
             y2 = int((j + 1) * square_size)
             
-            # Update edit canvas
             col = self._canvas.get_hex_rgb((i, j))
             self._draw_rectangle(True, col, x1, y1, x2, y2)
         
-        # Only update the view canvas once at the end
         self._update_view_canvas()
     
     def _undo(self) -> None:
@@ -587,7 +569,7 @@ class DrawingGUI:
 
     def _delete_layer(self, k: int):
         """"Delete layer <k> from this canvas, updating the GUI accordingly."""
-        # If there is only 1 layer, we do not delete layers.
+        # if there is only 1 layer we do not delete layers
         if self._canvas.get_num_layers() < 2:
             return
         self._canvas.remove_layer(self._canvas.get_layer(k))
@@ -632,18 +614,15 @@ class DrawingGUI:
             widget.destroy()
 
         num_layers = self._canvas.get_num_layers()
-        
-        # Use persistent layer selection variable
+
         if not hasattr(self, '_layer_button_var'):
             self._layer_button_var = tk.IntVar(value=self._canvas.active_layer_index)
         else:
             self._layer_button_var.set(self._canvas.active_layer_index)
-        
-        # Store the visibility variables as instance attributes so they persist
+
         if not hasattr(self, '_visibility_vars'):
             self._visibility_vars = []
         
-        # Ensure we have enough visibility variables
         while len(self._visibility_vars) < num_layers:
             self._visibility_vars.append(tk.BooleanVar())
         
@@ -658,7 +637,6 @@ class DrawingGUI:
                                     bg="white")
             checkbox.grid(row=k, column=0, padx=2)
 
-            # Layer select radio button - use persistent variable
             radiobutton = tk.Radiobutton(self._layers_frame,
                                         text=self._canvas.get_layer(k).name,
                                         variable=self._layer_button_var, 
@@ -741,7 +719,6 @@ class DrawingGUI:
         content_size = n * square_size
         self._edit_canvas.config(scrollregion=(0, 0, content_size, content_size))
 
-        # Draw the grid
         for i in range(n):
             for j in range(n):
                 self.draw_square(i, j, square_size, True)
@@ -767,7 +744,7 @@ class DrawingGUI:
         if edit:
             img = self._edit_img
 
-        if not c:  # make transparent checkerboard!
+        if not c: # checkboard
             c1 = '#aaaaaa'
             c2 = '#666666'
             dx = int(0.5 * (x2 - x1))
@@ -777,9 +754,6 @@ class DrawingGUI:
             img.put(c2, ['-to', x1 + dx, y1, x2, y1 + dy])
             img.put(c2, ['-to', x1, y1 + dy, x1 + dx, y2])
         else:
-            # note, this warning about wrong argument type can be ignored,
-            # as it is an issue with the put method not being properly
-            # annotated.
             img.put(c, ['-to', x1, y1, x2, y2])
 
     def _update_view_canvas(self) -> None:
@@ -791,7 +765,6 @@ class DrawingGUI:
 
         self._view_img.blank()
 
-        # Draw the grid
         for i in range(n):
             for j in range(n):
                 self.draw_square(i, j, square_size, False)
@@ -810,4 +783,4 @@ class DrawingGUI:
 
 
 if __name__ == "__main__":
-    DrawingGUI()  # Start the GUI with a blank canvas
+    DrawingGUI()
